@@ -1,0 +1,179 @@
+#!/usr/bin/env python
+
+"""
+This is a simple program that given action as a command line argument will
+make MiRo execute just this action and exit. Possible actions are:
+- go ( goes forward for 200mm )
+- turnL ( turns 90 degreed left )
+- turnR ( turns 90 degrees right )
+- eyes ( closes its eyes if they're open, opens if they're closed )
+- ears ( rotates ears )
+- headDown ( leans head down )
+"""
+
+import rospy
+
+from std_msgs.msg import String
+from geometry_msgs.msg import Twist
+
+import miro_msgs
+from miro_msgs.msg import core_control, platform_sensors, core_state, core_config
+from miro_constants import miro
+
+from os import system, name 
+
+import time
+import sys
+
+
+
+def error(msg):
+    print(msg)
+    sys.exit(0)
+
+def printInstructions():
+    print """
+Usage:
+    actions.py robot=<robot_name> action=<action_type>
+	
+	Options:
+		robot=<robot_name>
+			to run the client specify at least this option - the name
+			of the miro robot to connect to
+		action=<action_type>
+			specify action to be performed by robot, available actions are:
+			turnR, turnL, eyes, ears, go, headDown
+    """
+    sys.exit(0)
+
+def fmt(x, f):
+    s = ""
+    x = bytearray(x)
+    for i in range(0, len(x)):
+        if not i == 0:
+            s = s + ", "
+        s = s + f.format(x[i])
+    return s
+def flt3(x):
+    return "{0:.3f}".format(x)
+
+def clear():
+	if not name == 'nt': 
+		_ = system('clear')
+
+class miro_ros_client:
+
+    def callback_platform_sensors(self, object):
+        
+        if not self.active:
+            return
+
+        self.platform_sensors = object
+
+        q = core_control()
+
+        # Miro runs at 50Hz
+        sync_rate = 50
+       	 # time of the movement
+        period = 2 * sync_rate # 2 seconds
+        # self counts increases 50 times a sec so after 1 sec z = 50 / 100 = 0 
+        cur_time = self.count / period
+
+        if not cur_time == self.last_time:
+            self.last_time = cur_time   
+            # create body_vel for next pattern segment
+            self.body_vel = Twist()
+        #self.emotion_target[0] = 0.5
+        if fmt(self.platform_sensors.touch_body[0], '{0:.0f}') == "1":
+            print "touch detected"
+            self.emotion_target[0] = 0 
+            self.emotion_drive_gamma = 0.5
+            
+			
+            
+        # publish
+        q.emotion_drive_target.valence = self.emotion_target[0]
+        q.emotion_drive_gamma = self.emotion_drive_gamma
+        self.pub_core_control.publish(q)
+
+        self.count = self.count + 1
+        
+    def callback_core_state(self,object):
+    	if not self.active:
+    		return
+    		
+    	self.core_state = object
+    	print flt3(self.core_state.emotion.valence)
+    	time.sleep(2)
+    	#clear()
+    	
+    def loop(self):
+        while True:
+            if rospy.core.is_shutdown():
+                break
+            time.sleep(1)
+
+    def __init__(self):
+
+        # default data
+        self.platform_sensors = None
+        self.core_state = None
+        self.emotion_target = [0.5, 0.5]
+        self.emotion_drive_gamma = -1
+        self.config_done = False
+
+        if len(sys.argv) == 1:
+            printInstructions()
+
+        # argument options
+        self.robot_name = ""
+        self.action = ""
+
+        # handle arguments
+        for arg in sys.argv[1:]:
+            f = arg.find('=')
+            if f == -1:
+                key = arg
+                val = ""
+            else:
+                key = arg[:f]
+                val = arg[f+1:]
+            if key == "robot":
+                self.robot_name = val
+            elif key == "action":
+                self.action = val
+            else:
+                error("argument not recognised \"" + arg + "\"")
+
+        # check we got at least one
+        if len(self.robot_name) == 0:
+            error("argument \"robot\" must be specified")
+        
+        # pattern
+        self.count = 0
+        self.last_time = -1
+        self.body_vel = None
+
+        # set inactive
+        self.active = False
+        
+        # publish
+        topic_root = "/miro/" + self.robot_name
+        self.pub_core_control = rospy.Publisher(topic_root + "/core/control",
+                    core_control, queue_size=0)
+        self.pub_core_config = rospy.Publisher(topic_root + "/core/config", core_config, queue_size=0)
+        
+        # subscribe
+        self.sub_sensors = rospy.Subscriber(topic_root + "/platform/sensors",
+                platform_sensors, self.callback_platform_sensors)
+        self.sub_core_state = rospy.Subscriber(topic_root + "/core/state", core_state, self.callback_core_state)
+        self.active = True
+        
+
+if __name__ == "__main__":
+    rospy.init_node("miro_ros_client_py", anonymous=True)
+    main = miro_ros_client()
+    main.loop()
+    
+
+

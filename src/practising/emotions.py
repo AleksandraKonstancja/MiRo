@@ -1,0 +1,181 @@
+#!/usr/bin/env python
+
+"""
+This is a simple program that implements a separate emotion system for MiRo.
+When the program is started numerical emotion and mood state will be displayed.
+MiRo gets happy when stroked and sad if left alone for a while. Over time
+mood increases or decreases based on last emotions. Emotion is also shown
+by state of the tail - tail low when sad, wagging when happy - and mood is shown
+by lift of the head - head low when sad, high when happy.
+"""
+
+import rospy
+
+from std_msgs.msg import String
+from geometry_msgs.msg import Twist
+
+import miro_msgs
+from miro_msgs.msg import core_control, platform_sensors, core_state, core_config, platform_control
+from miro_constants import miro
+
+from os import system, name 
+
+import time
+import sys
+
+
+
+def error(msg):
+    print(msg)
+    sys.exit(0)
+
+def printInstructions():
+    print """
+Usage:
+    actions.py robot=<robot_name> action=<action_type>
+	
+	Options:
+		robot=<robot_name>
+			to run the client specify at least this option - the name
+			of the miro robot to connect to
+		action=<action_type>
+			specify action to be performed by robot, available actions are:
+			turnR, turnL, eyes, ears, go, headDown
+    """
+    sys.exit(0)
+
+def fmt(x, f):
+    s = ""
+    x = bytearray(x)
+    for i in range(0, len(x)):
+        if not i == 0:
+            s = s + ", "
+        s = s + f.format(x[i])
+    return s
+"""def flt3(x):
+    return "{0:.3f}".format(x)"""
+
+def clear():
+	
+	if not name == 'nt': 
+		_ = system('clear')
+
+class miro_ros_client:
+
+    def callback_platform_sensors(self, object):
+        
+        if not self.active:
+            return
+
+        self.platform_sensors = object
+
+        q = platform_control()
+
+        if fmt(self.platform_sensors.touch_body[0], '{0:.0f}') == "1":
+        	print "touch detected"
+        	self.updateEmotion(True)
+        else:
+        	self.updateEmotion(False)            
+		self.updateMood()	
+            
+        # publish
+        q.tail = self.emotion
+        self.pub_platform_control.publish(q)
+        
+        self.count+=1
+
+        
+    def updateEmotion(self, touchDetected):
+    	
+    	if ( touchDetected ):
+    		self.emotion += 0.002
+    	else:
+    		self.emotion -= 0.001
+    	print("emotion: " + str(self.emotion))
+    	#clear()
+    	
+    def updateMood(self):
+    	sync_rate = 50
+    	time = self.count / sync_rate # in seconds
+    	
+    	if ( time == 0 ):
+    		self.last_emotion = self.emotion
+    	elif ( time > 5 ) and self.isGettingHappier():
+    		self.mood+= 0.1
+    		print "mood: "+ str(self.mood)
+    		self.count = 0
+    	elif ( time> 5) and (not isGettingHappier()):
+    		self.mood-= 0.1
+    		print "mood: " + str(self.mood)
+    		self.count= 0
+    		
+    		
+    def isGettingHappier(self):
+    	return self.emotion > self.last_emotion
+    	
+    def detectCommand(self):
+    	return
+    
+    def addCommand(self, c):
+    	self.known_commands.append(c)
+    	
+    def loop(self):
+        while True:
+            if rospy.core.is_shutdown():
+                break
+            time.sleep(1)
+
+    def __init__(self):
+
+        # default data
+        self.platform_sensors = None
+        self.last_emotion = 0.0
+        self.known_commands = []
+        self.emotion = 0.0
+        self.mood = 0.0
+        self.count = 0
+
+        if len(sys.argv) == 1:
+            printInstructions()
+
+        # argument options
+        self.robot_name = ""
+
+        # handle arguments
+        for arg in sys.argv[1:]:
+            f = arg.find('=')
+            if f == -1:
+                key = arg
+                val = ""
+            else:
+                key = arg[:f]
+                val = arg[f+1:]
+            if key == "robot":
+                self.robot_name = val
+            else:
+                error("argument not recognised \"" + arg + "\"")
+
+        # check we got at least one
+        if len(self.robot_name) == 0:
+            error("argument \"robot\" must be specified")
+
+        # set inactive
+        self.active = False
+        
+        # publish
+        topic_root = "/miro/" + self.robot_name
+        self.pub_platform_control = rospy.Publisher(topic_root + "/platform/control", platform_control, queue_size=0)
+        
+        # subscribe
+        self.sub_sensors = rospy.Subscriber(topic_root + "/platform/sensors",
+                platform_sensors, self.callback_platform_sensors)
+        self.active = True
+        
+
+if __name__ == "__main__":
+    rospy.init_node("miro_ros_client_py", anonymous=True)
+    main = miro_ros_client()
+    main.loop()
+    
+
+
