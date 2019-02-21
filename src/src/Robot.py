@@ -81,11 +81,13 @@ class Robot:
 		
 	def detectTouch(self):
 		
-		if fmt(self.platform_sensors.touch_body[0], '{0:.0f}') == "1":
-			print "touch detected"
-			return True
-		else:
-			return False
+		for sensor in self.platform_sensors.touch_body:
+			if fmt(sensor, '{0:.0f}') == '1':
+				return True
+		for sensor in self.platform_sensors.touch_head:
+			if fmt(sensor, '{0:.0f}') == '1':
+				return True
+		return False
 	
 
 	def __init__(self):
