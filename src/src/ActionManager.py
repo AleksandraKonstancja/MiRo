@@ -25,8 +25,8 @@ class ActionManager:
 		
 		for key in self.probabilityDict.keys():
 			if not key == action:
-				something = rest / prev_rest
-				self.probabilityDict[key] *= something
+				rest_rate = rest / prev_rest
+				self.probabilityDict[key] *= rest_rate
 			
 		return
 	
@@ -128,7 +128,9 @@ class TestClass(unittest.TestCase):
 		
 			
 if __name__ == '__main__':
-	unittest.main()
+	#unittest.main()
+	import rostest
+	rostest.rosrun('test_roslaunch', 'action_manager_test', TestClass)
 
 
 

@@ -11,7 +11,7 @@ from std_msgs.msg import String
 from geometry_msgs.msg import Twist
 
 import miro_msgs
-from miro_msgs.msg import core_control, platform_sensors, core_state, core_config, platform_control
+from miro_msgs.msg import platform_mics, core_control, platform_sensors, core_state, core_config, platform_control
 from miro_constants import miro
 
 from os import system, name 
@@ -36,9 +36,6 @@ class Robot:
 		
 		q = platform_control()
 		
-		#sync_rate = 50
-		#time = self.count / sync_rate # in seconds
-		
 		self.updateEmotion(self.detectTouch())
 		self.updateMood()
 		
@@ -46,6 +43,20 @@ class Robot:
 		self.pub_platform_control.publish(q)
 		
 		self.count += 1
+	
+	def callback_platform_mics(self, object):
+		
+		if not self.active:
+			return
+		
+		self.mics = object
+		if (self.count/50)<3: # for 3 sec, note: this only works if command time smaller than mood update time!
+			self.storedSound[self.count/50] = self.mics.data
+		else:
+			fn = open("goForward.txt", "w")
+			for d in self.storedSound:
+				for i in range(4000):
+					fn.write(str(d[i])+"\n")
 		
 	def detectCommand(self):
 		return
@@ -59,7 +70,7 @@ class Robot:
 			self.emotion += 0.0005
 		elif (not isTouched):
 			self.emotion -= 0.0001
-		print("emotion: " + str(self.emotion))
+		#print("emotion: " + str(self.emotion))
 		
 	def updateMood(self):
 		
@@ -69,11 +80,11 @@ class Robot:
 		if ( time > 5 ) and self.isHappy():
 			self.mood+=0.1
 			self.count = 0
-			print "mood: " + str(self.mood)
+			print "mood: " + str(self.mood) + "time: " + str(time)
 		elif (time>5) and (not self.isHappy()):
 			self.mood-=0.1
+			print "mood: " + str(self.mood) + "time: " + str(self.count)
 			self.count = 0
-			print "mood: " + str(self.mood)
 			
 	def isHappy(self):
 		return self.emotion > 0
@@ -93,11 +104,15 @@ class Robot:
 	def __init__(self):
 		
 		self.platform_sensors = None
+		self.mics = None
 		self.known_commands = []
 		self.last_emotion = 0.0
 		self.emotion = 0.0
 		self.mood = 0.0
 		self.count = 0
+		#self.size = 4000*3
+		self.storedSound =[None] * 3
+		#self.curSoundIndex = 0
 		
 		#publish
 		topic_root = "/miro/rob01"
@@ -105,6 +120,6 @@ class Robot:
         
 		#subscribe
 		self.sub_sensors = rospy.Subscriber(topic_root + "/platform/sensors", platform_sensors, self.callback_platform_sensors)
-		
+		self.sub_mics = rospy.Subscriber(topic_root + "/platform/mics", platform_mics, self.callback_platform_mics)
         
 		self.active = True

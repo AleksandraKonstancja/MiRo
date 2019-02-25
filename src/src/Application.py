@@ -10,16 +10,25 @@ import Robot
 
 class Application:
 	
+	def save(self):
+		fn = open("test.txt", "w")
+		
+		for d in self.robot.storedSound:
+			fn.write(str(d) + "\n")
+			print str(d) + "\n"
+			
+	
 	def loop(self):
 		while True:
 			if rospy.core.is_shutdown():
+				save()
 				break
 			time.sleep(1)
 			
 	
 	def __init__(self):
 		
-		robot = Robot.Robot()
+		self.robot = Robot.Robot()
 		
 
 if __name__ == "__main__":
