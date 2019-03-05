@@ -6,13 +6,15 @@ This is a Robot class of the MiRo project
 
 import rospy
 import time
+from Command import Command
+from cv_bridge import CvBridge, CvBridgeError
 
 from std_msgs.msg import String
 from geometry_msgs.msg import Twist
-
 import miro_msgs
 from miro_msgs.msg import platform_mics, core_control, platform_sensors, core_state, core_config, platform_control
 from miro_constants import miro
+from sensor_msgs.msg import Image
 
 from os import system, name 
 
@@ -44,21 +46,13 @@ class Robot:
 		
 		self.count += 1
 	
-	def callback_platform_mics(self, object):
 		
-		if not self.active:
-			return
-		
-		self.mics = object
-		if (self.count/50)<3: # for 3 sec, note: this only works if command time smaller than mood update time!
-			self.storedSound[self.count/50] = self.mics.data
-		else:
-			fn = open("goForward.txt", "w")
-			for d in self.storedSound:
-				for i in range(4000):
-					fn.write(str(d[i])+"\n")
-		
-	def detectCommand(self):
+	def detectCommand(self, object):
+		com = Command()
+		bridge = CvBridge()
+		image = bridge.imgmsg_to_cv2(object, "bgr8")
+		imgs = com.detectColour(image)
+		com.detectShape(imgs)
 		return
 	
 	def addCommand(self, c):
@@ -102,7 +96,6 @@ class Robot:
 	
 
 	def __init__(self):
-		
 		self.platform_sensors = None
 		self.mics = None
 		self.known_commands = []
@@ -110,9 +103,9 @@ class Robot:
 		self.emotion = 0.0
 		self.mood = 0.0
 		self.count = 0
-		#self.size = 4000*3
-		self.storedSound =[None] * 3
-		#self.curSoundIndex = 0
+		self.soundCount = 0
+		self.storedSound =[None] * 30 # for 3 sec
+
 		
 		#publish
 		topic_root = "/miro/rob01"
@@ -120,6 +113,5 @@ class Robot:
         
 		#subscribe
 		self.sub_sensors = rospy.Subscriber(topic_root + "/platform/sensors", platform_sensors, self.callback_platform_sensors)
-		self.sub_mics = rospy.Subscriber(topic_root + "/platform/mics", platform_mics, self.callback_platform_mics)
-        
+		self.sub_cam = rospy.Subscriber(topic_root + "/platform/caml", Image, self.detectCommand)
 		self.active = True
