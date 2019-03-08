@@ -9,8 +9,7 @@ import random
 class ActionManager:
 	
 	# updates all probabilities depending on learning rate so that total = 100
-	def updateProbs(self, action, learn_rate):
-			
+	def updateProbs(self,action, learn_rate):
 		prob_sum = learn_rate + self.probabilityDict[action]
 		
 		# make sure max probability is 100
@@ -28,13 +27,13 @@ class ActionManager:
 				rest_rate = rest / prev_rest
 				self.probabilityDict[key] *= rest_rate
 			
-		return
+		print self.probabilityDict
 	
 	# performs an action based on its probability
 	def performAction(self):
 		total_prob = 0
 		randomNum = random.randint(1,101)
-		print "random: " + str(randomNum)
+		#print "random: " + str(randomNum)
 		
 		for key in self.probabilityDict.keys():
 			total_prob += self.probabilityDict[key]
@@ -51,21 +50,29 @@ class ActionManager:
 	def findHighestProb(self):
 		return max(self.probabilityDict, key=self.probabilityDict.get)
 	
-	# code for these to be added
+	# code for these to be added                             
 	def turnLeft(self):
+		self.last_action = "turnL"
 		print "left"
 	def turnRight(self):
+		self.last_action = "turnR"
 		print "right"
 	def go(self):
+		self.last_action = "go"
 		print "go"
 	def eyes(self):
+		self.last_action = "eyes"
 		print "eyes"
 	def headDown(self):
+		self.last_action = "headDown"
 		print "hDown"
 	def ears(self):
+		self.last_action = "ears"
 		print "ears"
 			
 	def __init__(self):
+		
+		self.last_action = ""
 		
 		self.actionDict = {
 			"turnL" : self.turnLeft,
