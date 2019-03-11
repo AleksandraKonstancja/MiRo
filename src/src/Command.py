@@ -9,9 +9,9 @@ import argparse
 from ActionManager import ActionManager
 
 boundaries = {
-			"red" : ([0, 0, 100], [80, 80, 255]),			
+			"red" : ([0, 0, 90], [60, 60, 255]),			
 			"green" : ([0, 90, 0], [80,255, 80]),			
-			"blue" : ([90, 0, 0], [255, 80, 80]),		
+			"blue" : ([81, 0, 0], [255, 89, 89]),		
 		}
 
 class Command:
@@ -42,17 +42,17 @@ class Command:
 			#print " no shape detected"
 	
 	
-		
+	# adjust brightness, saturation, apply mask that only leaves red,green,blue parts	
 	def prepareImage(self, image):
 		
 		hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 		(h,s,v) = cv2.split(hsv)
-		s = s+50
-		#v = v+20
+		s = s+30
+		v = v+20
 		hsv = cv2.merge([h,s,v])
 		image = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-		cv2.imshow("image", image)
-		cv2.waitKey(0)
+		cv2.imshow(self.camera, image)
+		cv2.waitKey(1) & 0xFF
 		final = 0
 	
 		num = 0
@@ -71,7 +71,7 @@ class Command:
 			
 		return final
 			
-		
+	# decide a shape based on number of edges	
 	def recognizeShape(self, c):
 		shape = ""
 		peri = cv2.arcLength(c, True)
@@ -81,15 +81,17 @@ class Command:
 			shape = "triangle"
 		elif len(approx) ==4:
 			shape = "square"
+		else:
+			shape = "circle"
 		
 		return shape
 		
-	
+	# find contours of the biggest shape on the image
 	def detectShape(self, image):
 			
 		gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-		blurred = cv2.GaussianBlur(gray,(21,21),0)
-		thresh = cv2.threshold(blurred, 40, 255, cv2.THRESH_BINARY)[1]
+		blurred = cv2.GaussianBlur(gray,(31,31),0)
+		thresh = cv2.threshold(blurred, 20, 255, cv2.THRESH_BINARY)[1]
 		
 		cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 	
@@ -111,11 +113,11 @@ class Command:
 				biggest_area = cur_area
 				biggest_shape = c
 			
-		if biggest_area > 500: 
+		if biggest_area > 1000: 
 			return biggest_shape
 		
 		return []
-		
+	# check colour inside given contours	
 	def detectColour(self, image, cnts):
 		
 			m = cv2.moments(cnts)
@@ -129,24 +131,23 @@ class Command:
 				lower = np.array(lower, dtype = "uint8")
 				upper = np.array(upper, dtype = "uint8")
 					
-				correct = False
+				correct = 0
 				for i in range(3):
 					if centreColour[i]>lower[i] and centreColour[i]<upper[i]:
-						correct=True
-					else:
-						correct = False
+						correct +=1
 				
-				if correct:
+				if correct==3:
 					#print "color: " + str(boundaries.keys()[number])
 					self.colour = str(boundaries.keys()[number])
 					
 				number+=1
 			
-			text = str( self.colour) + " " + str(self.shape)
+			text = str( self.colour) + " " + str(self.shape) 
 			cv2.putText(image, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)	
-			cv2.imshow("image2", image)
-			cv2.waitKey(0)
-			cv2.destroyAllWindows()
+			text2 = str(self.camera) + " shape detected" 
+			cv2.imshow(text2, image)
+			cv2.waitKey(1) & 0xFF
+			#cv2.destroyAllWindows()
 			
 	
 	def performAction(self):

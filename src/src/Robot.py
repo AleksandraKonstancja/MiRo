@@ -15,7 +15,7 @@ import miro_msgs
 from miro_msgs.msg import platform_mics, core_control, platform_sensors, core_state, core_config, platform_control
 from miro_constants import miro
 from sensor_msgs.msg import Image
-
+import time
 from os import system, name 
 
 def fmt(x, f):
@@ -41,19 +41,61 @@ class Robot:
 		self.updateEmotion(self.detectTouch())
 		self.updateMood()
 		
+		if (self.waitingForFeedback and self.isHappy()):
+
+			for c in self.known_commands:
+				if c.equals(self.last_command):
+		
+					self.last_command.updateProbs( (self.mood) )
+					c = self.last_command
+			
+		
 		q.tail = round(self.emotion,1)
 		self.pub_platform_control.publish(q)
 		
 		self.count += 1
 	
+	def commandKnown(self, com):
+		for c in self.known_commands:
+			if com.isCommand() and c.equals(com):
+				return True
+				
+		return False
 		
-	def detectCommand(self, object):
-		com = Command()
+	def findCommand(self,com):
+		for c in self.known_commands:
+			if c.equals(com):
+				return c
+		return None
+		
+		
+	def detectCommand(self, image, camera):
+		
+		com = Command(camera)
+		com.getCommandData(image)
+			
+		if self.commandKnown(com):
+			self.last_command = com
+			print("Found command: " + com.toPrint())
+			com.performAction()
+			self.waitingForFeedback = True
+			#time.sleep(3) 
+			self.waitingForFeedback = False
+		elif not self.commandKnown(com) and com.isCommand():
+			self.known_commands.append(com)
+			
+	def detectLeft( self, object):
 		bridge = CvBridge()
 		image = bridge.imgmsg_to_cv2(object, "bgr8")
-		imgs = com.detectColour(image)
-		com.detectShape(imgs)
-		return
+		self.detectCommand(image, "left")
+		
+	def detectRight( self, object):
+		bridge = CvBridge()
+		image = bridge.imgmsg_to_cv2(object, "bgr8")
+		self.detectCommand(image, "right")
+		
+			
+		
 	
 	def addCommand(self, c):
 		self.known_commands.append(c)
@@ -62,7 +104,7 @@ class Robot:
 		
 		if ( isTouched and self.emotion < 1 ):
 			self.emotion += 0.0005
-		elif (not isTouched):
+		elif (not isTouched) and self.emotion > 0:  #used to be just not touched
 			self.emotion -= 0.0001
 		#print("emotion: " + str(self.emotion))
 		
@@ -76,12 +118,12 @@ class Robot:
 			self.count = 0
 			print "mood: " + str(self.mood) + "time: " + str(time)
 		elif (time>5) and (not self.isHappy()):
-			self.mood-=0.1
+			self.mood-=0.01
 			print "mood: " + str(self.mood) + "time: " + str(self.count)
 			self.count = 0
 			
 	def isHappy(self):
-		return self.emotion > 0
+		return (self.emotion > 0)
 		
 		
 	def detectTouch(self):
@@ -103,8 +145,9 @@ class Robot:
 		self.emotion = 0.0
 		self.mood = 0.0
 		self.count = 0
-		self.soundCount = 0
-		self.storedSound =[None] * 30 # for 3 sec
+		self.waitingForFeedback = False
+		self.actionInProgress = False
+		self.last_command = None
 
 		
 		#publish
@@ -113,5 +156,6 @@ class Robot:
         
 		#subscribe
 		self.sub_sensors = rospy.Subscriber(topic_root + "/platform/sensors", platform_sensors, self.callback_platform_sensors)
-		self.sub_cam = rospy.Subscriber(topic_root + "/platform/caml", Image, self.detectCommand)
+		self.sub_caml = rospy.Subscriber(topic_root + "/platform/caml", Image, self.detectLeft,queue_size=1)
+		#self.sub_camr = rospy.Subscriber(topic_root + "/platform/camr", Image, self.detectRight,queue_size=1)
 		self.active = True
