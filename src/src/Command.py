@@ -45,14 +45,15 @@ class Command:
 	# adjust brightness, saturation, apply mask that only leaves red,green,blue parts	
 	def prepareImage(self, image):
 		
+		cv2.imshow(self.camera, image)
+		cv2.waitKey(1) & 0xFF
+		
 		hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 		(h,s,v) = cv2.split(hsv)
 		s = s+30
 		v = v+20
 		hsv = cv2.merge([h,s,v])
 		image = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-		cv2.imshow(self.camera, image)
-		cv2.waitKey(1) & 0xFF
 		final = 0
 	
 		num = 0
