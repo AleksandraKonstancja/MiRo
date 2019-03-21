@@ -11,8 +11,14 @@ from miro_constants import miro
 
 class ActionManager:
 	
-	# updates all probabilities depending on learning rate so that total = 100
-	def updateProbs(self,action, learn_rate):
+	"""
+	Updates last action by the learning rate and recalculates remaining 
+	probabilities depending on previous contribution to the total ( 100 )
+	of each action.
+	learn_rate - how much should action be affected
+	"""
+	def updateProbs(self, learn_rate):
+		action = self.last_action
 		prob_sum = learn_rate + self.probabilityDict[action]
 		
 		# make sure max probability is 100
@@ -32,7 +38,9 @@ class ActionManager:
 			
 		print self.probabilityDict
 	
-	# performs an action based on its probability
+	"""
+	Performs an action based on its probability
+	"""
 	def performAction(self):
 		total_prob = 0
 		randomNum = random.randint(1,101)
@@ -45,27 +53,34 @@ class ActionManager:
 				break
 		return self.q
 				
-	# performs most likely action
+	"""
+	Performs most likely action
+	"""
 	def performMostLikelyAction(self):
 		self.actionDict[findHighestProb()]
 		return
 		
 	
-	# finds an action that is most likely to be performed	
+	"""
+	Finds an action with highest probability of being performed
+	"""	
 	def findHighestProb(self):
 		return max(self.probabilityDict, key=self.probabilityDict.get)
 	
-	# code for these to be added                             
+	"""
+	Set of functions responsible for interacting with robot's actuators
+	based on action chosen to be performed.
+	"""
 	def turnLeft(self):
-		self.q.body_vel.angular.z = +1.5235 #0.7854
+		self.q.body_vel.angular.z = +0.5235 #0.7854
 		self.last_action = "turnL"
 		print "left"
 	def turnRight(self):
-		self.q.body_vel.angular.z = -1.5235 #0.7854
+		self.q.body_vel.angular.z = -0.5235 #0.7854
 		self.last_action = "turnR"
 		print "right"
 	def go(self):
-		self.q.body_vel.linear.x = 400
+		self.q.body_vel.linear.x = 100
 		self.last_action = "go"
 		print "go"
 	def eyes(self):

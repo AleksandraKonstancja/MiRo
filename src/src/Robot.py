@@ -18,6 +18,9 @@ from sensor_msgs.msg import Image
 import time
 from os import system, name 
 
+"""
+Formating function copied from miro_ros_client.py
+"""
 def fmt(x, f):
     s = ""
     x = bytearray(x)
@@ -39,15 +42,15 @@ class Robot:
 		#q = platform_control()
 		
 		self.updateEmotion(self.detectTouch())
-		self.updateMood()
-		
-		if (self.waitingForFeedback and self.isHappy()):
+		self.updateMood(500)
+		self.updateProbs()
+		"""if (self.waitingForFeedback and self.isHappy()):
 
 			for c in self.known_commands:
 				if c.equals(self.last_command):
 		
 					self.last_command.updateProbs( (self.mood) )
-					c = self.last_command
+					c = self.last_command"""
 			
 		
 		self.q.tail = round(self.emotion,1)
@@ -55,74 +58,143 @@ class Robot:
 		
 		self.count += 1
 	
+	"""
+	If robot is rewarded by touch updates probability of last performed action 
+	for last seen command based on the mood state.
+	"""
+	def updateProbs(self):
+		if (self.waitingForFeedback and self.isHappy()):
+
+			for c in self.known_commands:
+				if c.equals(self.last_command):
+		
+					self.last_command.updateProbs( (self.mood) )
+					c = self.last_command
+					
+	"""
+	Checks if the command has already been learned or is seen for the first time.
+	Returns true if command is known, false if it is not
+	"""
 	def commandKnown(self, com):
 		for c in self.known_commands:
 			if com.isCommand() and c.equals(com):
 				return True
 				
 		return False
-		
+	
+	"""
+	Finds and returns the command in the list of learned commands.
+	Returns command from the list if it is found, or None if it does not exist
+	in the list.
+	"""
 	def findCommand(self,com):
 		for c in self.known_commands:
 			if c.equals(com):
 				return c
 		return None
 		
-		
+	"""
+	Detects command on the given image and responds to it.
+	"""
 	def detectCommand(self, image, camera):
 		
 		com = Command(camera)
 		com.getCommandData(image)
-			
-		if self.commandKnown(com):
-			com = self.findCommand(com)
-			self.last_command = com
-			print("Found command: " + com.toPrint())
-			self.q = self.last_command.performAction()
-			self.pub_platform_control.publish(self.q)
-			q = platform_control()
-			print "action finished, waiting for feedback"
-			#print "eyelids: " + str(q.eyelid_closure)
-			self.waitingForFeedback = True
+		
+		if self.last_command == None:
+			self.responded = False
+		
+			if self.commandKnown(com):
+				com = self.findCommand(com)
+				self.last_command = com
+				#self.respondToCommand()
+			elif not self.commandKnown(com) and com.isCommand():
+				self.known_commands.append(com)
+				self.last_command = com
+				#self.respondToCommand()
+			else:
+				self.q = platform_control()
+		elif not self.responded:
+			self.respondToCommand()
+			self.responded = True
+				
+	"""
+	Performs an action based on its probability and waits for feedback for 3 seconds.
+	"""
+	def respondToCommand(self):
+		
+		print("Found command: " + self.last_command.toPrint())
+		"""self.q =""" 
+		self.last_command.performAction()
+		"""self.pub_platform_control.publish(self.q)
+		q = platform_control()"""
+		print "action finished, waiting for feedback"
+		
+		self.waitingForFeedback = True
+		cur_time = time.time()
+		end_time = cur_time+5
+		while cur_time<end_time:
 			cur_time = time.time()
-			end_time = cur_time+3
-			while cur_time<end_time:
-				cur_time = time.time()
-			print "stopped waiting for feedback"
-			self.waitingForFeedback = False
-		elif not self.commandKnown(com) and com.isCommand():
-			self.known_commands.append(com)
-			last_command = com
-		else:
-			self.q = platform_control()
-			
+		print "stopped waiting for feedback"
+		self.waitingForFeedback = False
+		
+		self.last_command = None
+		
+	"""
+	Prepares image from left camera for detection and detects command.
+	"""
 	def detectLeft( self, object):
 		bridge = CvBridge()
 		image = bridge.imgmsg_to_cv2(object, "bgr8")
 		self.detectCommand(image, "left")
 		
+	"""
+	Prepares image from right camera for detection and detects command.
+	"""
 	def detectRight( self, object):
 		bridge = CvBridge()
 		image = bridge.imgmsg_to_cv2(object, "bgr8")
 		self.detectCommand(image, "right")
 		
-			
-		
-	
+	"""
+	Adds command to the list of known commands
+	"""
 	def addCommand(self, c):
 		self.known_commands.append(c)
 	
+	"""
+	Updates emotion based on whether robot is touched or not
+	"""
 	def updateEmotion(self, isTouched):
 		
-		if ( isTouched and self.emotion < 1 ):
-			self.emotion += 0.0005
-		elif (not isTouched) and self.emotion > 0:  #used to be just not touched
-			self.emotion -= 0.0001
+		if isTouched:
+			self.emotion = 1.0
+		else:
+			self.emotion = 0.0
+			
+		self.emotions.append(self.emotion)
 		#print("emotion: " + str(self.emotion))
 		
-	def updateMood(self):
+	"""
+	Updates mood based on average emotion over last emotions. 
+	emotionNumber - number of emotions used to calculate the average
+	"""
+	def updateMood(self, emotionNumber):
 		
-		sync_rate = 50
+		#emotionNumber = 250 # collected for 5 seconds, 50 readings per sec
+		
+		if len(self.emotions) == emotionNumber:
+			avrg = sum(self.emotions)/emotionNumber
+			if avrg > 0.5:
+				self.mood+=0.2
+			elif avrg <= 0.5 and self.mood >=0.1:
+				self.mood-=0.1
+			self.emotions = []
+			print "mood: " + str(self.mood) + " avrg: " + str(avrg)
+		
+			
+		
+		"""sync_rate = 50
 		time = self.count / sync_rate
 
 		if ( time > 5 ) and self.isHappy():
@@ -132,12 +204,14 @@ class Robot:
 		elif (time>5) and (not self.isHappy()) and self.mood>=0.01:
 			self.mood-=0.01
 			print ("mood: " + str(self.mood) + "time: " + str(self.count))
-			self.count = 0
+			self.count = 0"""
 			
 	def isHappy(self):
 		return (self.emotion > 0)
 		
-		
+	"""
+	Detects whether the robot is touched or not.
+	"""
 	def detectTouch(self):
 		
 		for sensor in self.platform_sensors.touch_body:
@@ -160,6 +234,9 @@ class Robot:
 		self.waitingForFeedback = False
 		self.actionInProgress = False
 		self.last_command = None
+		self.emotions = []
+		self.actionFinished = True
+		self.responded = False
 		
 		self.eyelid_closure = 0
 		self.q = platform_control()

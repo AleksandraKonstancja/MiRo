@@ -23,11 +23,18 @@ class Command:
 	def addAction(self, a):
 		return
 		
+	"""
+	Updates probability of last action performed for the command based on
+	the learning rate.
+	"""
 	def updateProbs(self, learnRate):
 		print self.action.last_action
 		if not self.action.last_action == "":
-			self.action.updateProbs(self.action.last_action,learnRate,)
-		
+			self.action.updateProbs(learnRate)
+	
+	"""
+	Gets shape and colour of the largest shape in an image
+	"""
 	def getCommandData(self,image):
 		img = self.prepareImage(image)
 		cnts = self.detectShape(img)
@@ -42,7 +49,10 @@ class Command:
 			#print " no shape detected"
 	
 	
-	# adjust brightness, saturation, apply mask that only leaves red,green,blue parts	
+	"""
+	Prepares an image for detection by adjusting brightness and saturation, 
+	and applying mask that only leaves red, green or blue parts
+	"""
 	def prepareImage(self, image):
 		
 		cv2.imshow(self.camera, image)
@@ -72,7 +82,9 @@ class Command:
 			
 		return final
 			
-	# decide a shape based on number of edges	
+	"""
+	Decides a shape based on detected contours
+	"""
 	def recognizeShape(self, c):
 		shape = ""
 		peri = cv2.arcLength(c, True)
@@ -87,7 +99,9 @@ class Command:
 		
 		return shape
 		
-	# find contours of the biggest shape on the image
+	"""
+	Finds contours of the biggest shape on the image
+	"""
 	def detectShape(self, image):
 			
 		gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -118,7 +132,10 @@ class Command:
 			return biggest_shape
 		
 		return []
-	# check colour inside given contours	
+	
+	"""
+	Check colour in the centre of given contours	
+	"""
 	def detectColour(self, image, cnts):
 		
 			m = cv2.moments(cnts)
@@ -154,13 +171,20 @@ class Command:
 	def performAction(self):
 		return self.action.performAction()
 	
+	"""
+	Checks that the object has all necessary information to be a command
+	"""
 	def isCommand(self):
 		
-		if not self.shape == "":
-			return True
-		else:
+		if self.shape == "" or self.colour == "" or self.camera == "":
 			return False
-			
+		else:
+			return True
+	
+	"""
+	Checks that two command objects are the same based on shape, colour
+	and camera only 
+	"""
 	def equals(self, other):
 		
 		if self.camera == other.camera and self.shape == other.shape and self.colour == other.colour:

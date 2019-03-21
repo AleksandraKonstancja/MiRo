@@ -7,14 +7,15 @@ This is a main class of the MiRo project
 import rospy
 import time
 import Robot
+import cv2
 
 class Application:
 	
 	def save(self):
 		fn = open("test.txt", "w")
 		
-		for d in self.robot.storedSound:
-			fn.write(str(d) + "\n")
+		for d in self.robot.known_commands:
+			fn.write(str(d.toPrint()) + "\n")
 			print str(d) + "\n"
 			
 	
@@ -22,6 +23,7 @@ class Application:
 		while True:
 			if rospy.core.is_shutdown():
 				save()
+				cv2.destroyAllWindows()
 				break
 			time.sleep(1)
 			
