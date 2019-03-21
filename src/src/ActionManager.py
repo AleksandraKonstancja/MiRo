@@ -5,6 +5,9 @@ This is a ActionManager class of the MiRo project
 """
 import unittest
 import random
+from time import time
+from miro_msgs.msg import platform_control
+from miro_constants import miro
 
 class ActionManager:
 	
@@ -40,11 +43,13 @@ class ActionManager:
 			if randomNum < total_prob:
 				self.actionDict[key]()
 				break
+		return self.q
 				
 	# performs most likely action
 	def performMostLikelyAction(self):
 		self.actionDict[findHighestProb()]
 		return
+		
 	
 	# finds an action that is most likely to be performed	
 	def findHighestProb(self):
@@ -52,27 +57,36 @@ class ActionManager:
 	
 	# code for these to be added                             
 	def turnLeft(self):
+		self.q.body_vel.angular.z = +1.5235 #0.7854
 		self.last_action = "turnL"
 		print "left"
 	def turnRight(self):
+		self.q.body_vel.angular.z = -1.5235 #0.7854
 		self.last_action = "turnR"
 		print "right"
 	def go(self):
+		self.q.body_vel.linear.x = 400
 		self.last_action = "go"
 		print "go"
 	def eyes(self):
+		self.q.eyelid_closure = 1
 		self.last_action = "eyes"
 		print "eyes"
 	def headDown(self):
+		self.q.body_config[1] = miro.MIRO_LIFT_MAX_RAD
 		self.last_action = "headDown"
 		print "hDown"
 	def ears(self):
+		self.q.ear_rotate[0] = 1 
+		self.q.ear_rotate[1] = 1 
 		self.last_action = "ears"
 		print "ears"
 			
 	def __init__(self):
 		
 		self.last_action = ""
+		
+		self.q = platform_control()
 		
 		self.actionDict = {
 			"turnL" : self.turnLeft,

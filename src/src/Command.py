@@ -152,7 +152,7 @@ class Command:
 			
 	
 	def performAction(self):
-		self.action.performAction()
+		return self.action.performAction()
 	
 	def isCommand(self):
 		

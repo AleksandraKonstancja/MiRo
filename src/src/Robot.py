@@ -36,7 +36,7 @@ class Robot:
 			
 		self.platform_sensors = object
 		
-		q = platform_control()
+		#q = platform_control()
 		
 		self.updateEmotion(self.detectTouch())
 		self.updateMood()
@@ -50,8 +50,8 @@ class Robot:
 					c = self.last_command
 			
 		
-		q.tail = round(self.emotion,1)
-		self.pub_platform_control.publish(q)
+		self.q.tail = round(self.emotion,1)
+		self.pub_platform_control.publish(self.q)
 		
 		self.count += 1
 	
@@ -75,14 +75,26 @@ class Robot:
 		com.getCommandData(image)
 			
 		if self.commandKnown(com):
+			com = self.findCommand(com)
 			self.last_command = com
 			print("Found command: " + com.toPrint())
-			com.performAction()
+			self.q = self.last_command.performAction()
+			self.pub_platform_control.publish(self.q)
+			q = platform_control()
+			print "action finished, waiting for feedback"
+			#print "eyelids: " + str(q.eyelid_closure)
 			self.waitingForFeedback = True
-			#time.sleep(3) 
+			cur_time = time.time()
+			end_time = cur_time+3
+			while cur_time<end_time:
+				cur_time = time.time()
+			print "stopped waiting for feedback"
 			self.waitingForFeedback = False
 		elif not self.commandKnown(com) and com.isCommand():
 			self.known_commands.append(com)
+			last_command = com
+		else:
+			self.q = platform_control()
 			
 	def detectLeft( self, object):
 		bridge = CvBridge()
@@ -116,10 +128,10 @@ class Robot:
 		if ( time > 5 ) and self.isHappy():
 			self.mood+=0.1
 			self.count = 0
-			print "mood: " + str(self.mood) + "time: " + str(time)
-		elif (time>5) and (not self.isHappy()):
+			print ("mood: " + str(self.mood) + "time: " + str(time))
+		elif (time>5) and (not self.isHappy()) and self.mood>=0.01:
 			self.mood-=0.01
-			print "mood: " + str(self.mood) + "time: " + str(self.count)
+			print ("mood: " + str(self.mood) + "time: " + str(self.count))
 			self.count = 0
 			
 	def isHappy(self):
@@ -148,6 +160,9 @@ class Robot:
 		self.waitingForFeedback = False
 		self.actionInProgress = False
 		self.last_command = None
+		
+		self.eyelid_closure = 0
+		self.q = platform_control()
 
 		
 		#publish
@@ -157,5 +172,5 @@ class Robot:
 		#subscribe
 		self.sub_sensors = rospy.Subscriber(topic_root + "/platform/sensors", platform_sensors, self.callback_platform_sensors)
 		self.sub_caml = rospy.Subscriber(topic_root + "/platform/caml", Image, self.detectLeft,queue_size=1)
-		#self.sub_camr = rospy.Subscriber(topic_root + "/platform/camr", Image, self.detectRight,queue_size=1)
+		self.sub_camr = rospy.Subscriber(topic_root + "/platform/camr", Image, self.detectRight,queue_size=1)
 		self.active = True
