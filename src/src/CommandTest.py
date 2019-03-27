@@ -17,14 +17,21 @@ class TestClass(unittest.TestCase):
 		com = Command("left")
 		com.colour = "red"
 		com.shape = "triangle"
-		com.action.last_action = "go"
+		com.action.choice = "go"
 
 		before = com.action.probabilityDict["go"]
-		self.assertEquals(round(before,2), 16.67)
+		self.assertEquals(round(before,2), 14.29)
 		com.updateProbs(1)
 		after = com.action.probabilityDict["go"]
-		self.assertEquals(round(after,2), 17.67) 
+		self.assertEquals(round(after,2), 15.29) 
 		self.assertTrue(after > before)
+		
+	def test_command_creation(self):
+		
+		com = Command("left")
+		
+		self.assertFalse(com.sequence[0].isStopAction())
+		self.assertTrue(com.sequence[1].isStopAction())
 		
 		
 		

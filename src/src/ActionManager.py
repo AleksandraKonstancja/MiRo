@@ -18,7 +18,7 @@ class ActionManager:
 	learn_rate - how much should action be affected
 	"""
 	def updateProbs(self, learn_rate):
-		action = self.last_action
+		action = self.choice
 		prob_sum = learn_rate + self.probabilityDict[action]
 		
 		# make sure max probability is 100
@@ -42,16 +42,19 @@ class ActionManager:
 	Performs an action based on its probability
 	"""
 	def performAction(self):
-		total_prob = 0
-		randomNum = random.randint(1,101)
-		#print "random: " + str(randomNum)
-		
-		for key in self.probabilityDict.keys():
-			total_prob += self.probabilityDict[key]
-			if randomNum < total_prob:
-				self.actionDict[key]()
-				break
-		return self.q
+		if self.isStopAction:
+			self.stop()
+		else:
+			total_prob = 0
+			randomNum = random.randint(1,101)
+			#print "random: " + str(randomNum)
+			
+			for key in self.probabilityDict.keys():
+				total_prob += self.probabilityDict[key]
+				if randomNum < total_prob:
+					self.actionDict[key]()
+					break
+			return self.q
 				
 	"""
 	Performs most likely action
@@ -59,6 +62,13 @@ class ActionManager:
 	def performMostLikelyAction(self):
 		self.actionDict[findHighestProb()]
 		return
+		
+	def isFullyLearned(self):
+		prob = self.probabilityDict[self.choice]
+		return (prob == 100)
+		
+	def isStopAction(self):
+		return self.isStopAction
 		
 	
 	"""
@@ -73,33 +83,37 @@ class ActionManager:
 	"""
 	def turnLeft(self):
 		self.q.body_vel.angular.z = +0.5235 #0.7854
-		self.last_action = "turnL"
+		self.choice = "turnL"
 		print "left"
 	def turnRight(self):
 		self.q.body_vel.angular.z = -0.5235 #0.7854
-		self.last_action = "turnR"
+		self.choice = "turnR"
 		print "right"
 	def go(self):
 		self.q.body_vel.linear.x = 100
-		self.last_action = "go"
+		self.choice = "go"
 		print "go"
 	def eyes(self):
 		self.q.eyelid_closure = 1
-		self.last_action = "eyes"
+		self.choice = "eyes"
 		print "eyes"
 	def headDown(self):
 		self.q.body_config[1] = miro.MIRO_LIFT_MAX_RAD
-		self.last_action = "headDown"
+		self.choice = "headDown"
 		print "hDown"
 	def ears(self):
 		self.q.ear_rotate[0] = 1 
 		self.q.ear_rotate[1] = 1 
-		self.last_action = "ears"
+		self.choice = "ears"
 		print "ears"
+	def stop(self):
+		self.q = platform_control()
+		self.choice = "stop"
+		print "stop"
 			
-	def __init__(self):
+	def __init__(self, isStop=False):
 		
-		self.last_action = ""
+		self.choice = ""
 		
 		self.q = platform_control()
 		
@@ -110,14 +124,16 @@ class ActionManager:
 			"eyes" : self.eyes,
 			"headDown" : self.headDown,
 			"ears" : self.ears,
+			#"stop" : self.stop
 		}
 		
 		self.probabilityDict = {}
 		
+		self.isStopAction = isStop
 		
 		self.actionNumber = len(self.actionDict)
 		initial_prob = 100.0 / self.actionNumber
-		
+			
 		for key in self.actionDict.keys():
 			self.probabilityDict[key] = initial_prob
 			

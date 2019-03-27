@@ -7,6 +7,7 @@ This is a Robot class of the MiRo project
 import rospy
 import time
 from Command import Command
+from ActionManager import ActionManager
 from cv_bridge import CvBridge, CvBridgeError
 
 from std_msgs.msg import String
@@ -71,6 +72,13 @@ class Robot:
 					self.last_command.updateProbs( (self.mood) )
 					c = self.last_command
 					
+	def updateProbs2(self, feedback):
+		
+		for c in self.known_commands:
+			if c.equals(self.last_command):
+				self.last_command.updateProbs2( (feedback*(1+self.mood)) )
+				c = self.last_command
+					
 	"""
 	Checks if the command has already been learned or is seen for the first time.
 	Returns true if command is known, false if it is not
@@ -107,11 +115,9 @@ class Robot:
 			if self.commandKnown(com):
 				com = self.findCommand(com)
 				self.last_command = com
-				#self.respondToCommand()
 			elif not self.commandKnown(com) and com.isCommand():
 				self.known_commands.append(com)
 				self.last_command = com
-				#self.respondToCommand()
 			else:
 				self.q = platform_control()
 		elif not self.responded:
@@ -124,21 +130,46 @@ class Robot:
 	def respondToCommand(self):
 		
 		print("Found command: " + self.last_command.toPrint())
-		"""self.q =""" 
-		self.last_command.performAction()
+		#self.last_command.performAction()
+		
 		"""self.pub_platform_control.publish(self.q)
 		q = platform_control()"""
-		print "action finished, waiting for feedback"
 		
-		self.waitingForFeedback = True
+		for i in range(len(self.last_command.sequence)):
+			"""self.q =""" 
+			self.last_command.sequence[i].performAction()
+			#if (not a.isFullyLearned()):
+			feedback = self.collectFeedback()
+			if self.last_command.sequence[i].isStopAction:
+				if feedback < 0:
+					self.last_command.sequence[i] = ActionManager()
+				break
+			else:
+				self.last_command.sequence[i].updateProbs(feedback)
+
+		if not self.last_command.sequence[-1].isStopAction:
+			self.last_command.addStopAction()
+			
+		for c in self.known_commands:
+			if c.equals(self.last_command):
+				c = self.last_command
+			
+		self.last_command = None
+		
+	def collectFeedback(self):
+		
+		print ("action finished, waiting for feedback")
+		#self.waitingForFeedback = True
+		feedback = -1
 		cur_time = time.time()
 		end_time = cur_time+5
 		while cur_time<end_time:
 			cur_time = time.time()
-		print "stopped waiting for feedback"
-		self.waitingForFeedback = False
-		
-		self.last_command = None
+			if self.emotion == 1:
+				feedback = 1
+		print ("stopped waiting for feedback")
+		#self.waitingForFeedback = False
+		return feedback
 		
 	"""
 	Prepares image from left camera for detection and detects command.
@@ -173,7 +204,6 @@ class Robot:
 			self.emotion = 0.0
 			
 		self.emotions.append(self.emotion)
-		#print("emotion: " + str(self.emotion))
 		
 	"""
 	Updates mood based on average emotion over last emotions. 
@@ -190,7 +220,7 @@ class Robot:
 			elif avrg <= 0.5 and self.mood >=0.1:
 				self.mood-=0.1
 			self.emotions = []
-			print "mood: " + str(self.mood) + " avrg: " + str(avrg)
+			print ("mood: " + str(self.mood) + " avrg: " + str(avrg))
 		
 			
 		

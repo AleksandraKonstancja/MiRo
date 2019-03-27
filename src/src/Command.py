@@ -17,10 +17,20 @@ boundaries = {
 class Command:
 	
 		
-	def startSequence(self):
-		return
+	def performAct2(self):
+		self.sequence[self.action_index].performAction()
+		self.action_index+=1
+		#reset index after last action was performed
+		if self.action_index == len(self.sequence):
+			self.action_index = 0
+			
+	def updateProbs2(self, learnRate):
+		#if not self.sequence[self.action_index].choice == "":
+		self.sequence[self.action_index].updateProbs(learnRate)
 		
-	def addAction(self, a):
+		
+	def addStopAction(self):
+		self.sequence.append(ActionManager(True))
 		return
 		
 	"""
@@ -28,9 +38,10 @@ class Command:
 	the learning rate.
 	"""
 	def updateProbs(self, learnRate):
-		print self.action.last_action
-		if not self.action.last_action == "":
+		print self.action.choice
+		if not self.action.choice == "":
 			self.action.updateProbs(learnRate)
+		#self.sequence[self.action_index].updateProbs(learnRate)
 	
 	"""
 	Gets shape and colour of the largest shape in an image
@@ -202,7 +213,8 @@ class Command:
 		self.shape = ""
 		self.colour = ""
 		self.action = ActionManager()
-		self.sequence = []
+		self.action_index = 0
+		self.sequence = [ActionManager(),ActionManager(True)]
 		
 """if __name__ == "__main__":
 	#comm =Command()
