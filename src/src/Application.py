@@ -11,18 +11,27 @@ import cv2
 
 class Application:
 	
-	def save(self):
-		fn = open("test.txt", "w")
+	def save(self, name):
+		fn = open(name, "w")
 		
 		for d in self.robot.known_commands:
-			fn.write(str(d.toPrint()) + "\n")
-			print str(d) + "\n"
+			
+			actions = ""
+			
+			for a in d.sequence:
+				actions += ("\n" + str(a.probabilityDict))
+				
+			fn.write(str(d.toPrint()) + " " + str(actions) + "\n")
+			#print str(d) + "\n"
 			
 	
 	def loop(self):
 		while True:
-			if rospy.core.is_shutdown():
-				save()
+			answer = input("Do you want to exit?")
+			if answer == 'y':
+				#rospy.core.is_shutdown():
+				self.save("test.txt")
+				print "bye"
 				cv2.destroyAllWindows()
 				break
 			time.sleep(1)

@@ -54,7 +54,7 @@ class ActionManager:
 				if randomNum < total_prob:
 					self.actionDict[key]()
 					break
-			return self.q
+		return self.q
 				
 	"""
 	Performs most likely action
@@ -98,7 +98,7 @@ class ActionManager:
 		self.choice = "eyes"
 		print "eyes"
 	def headDown(self):
-		self.q.body_config[1] = miro.MIRO_LIFT_MAX_RAD
+		self.q.body_config[1] = 1- miro.MIRO_LIFT_MAX_RAD
 		self.choice = "headDown"
 		print "hDown"
 	def ears(self):

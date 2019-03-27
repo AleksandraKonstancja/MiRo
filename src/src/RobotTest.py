@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+#!/usr/bin/python3.6
 """
 This is a ActionManager class of the MiRo project
 """

@@ -44,7 +44,7 @@ class Robot:
 		
 		self.updateEmotion(self.detectTouch())
 		self.updateMood(500)
-		self.updateProbs()
+		#self.updateProbs()
 		"""if (self.waitingForFeedback and self.isHappy()):
 
 			for c in self.known_commands:
@@ -136,8 +136,7 @@ class Robot:
 		q = platform_control()"""
 		
 		for i in range(len(self.last_command.sequence)):
-			"""self.q =""" 
-			self.last_command.sequence[i].performAction()
+			self.q = self.last_command.sequence[i].performAction()
 			#if (not a.isFullyLearned()):
 			feedback = self.collectFeedback()
 			if self.last_command.sequence[i].isStopAction:
