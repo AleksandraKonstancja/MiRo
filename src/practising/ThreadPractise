@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+import time
+import thread
+
+class ThreadTest:
+
+	def lookForCommands(self):
+	
+		com = self.commands[-1]+1
+		self.commands.append(com)
+		print "detected " + str(com)
+		
+	def respondToCommand(self):
+		
+		com = self.commands[-1]
+		
+		print "responding to " + str(com)
+		t = time.time()
+		finish = t + 2
+		while t < finish:
+			t = time.time()
+		print "finished responding to " + str(com)
+		
+		
+	def __init__(self):
+		
+		self.commands = [0]
+				
+	
+if __name__ == "__main__":
+	
+	th = ThreadTest()
+	
+	
+	while True:
+		pass
+		thread.start_new_thread(th.lookForCommands, ())
+		thread.start_new_thread(th.respondToCommand, ())
+		#th.lookForCommands()
+		#th.respondToCommand()
+
+		
+	
+		

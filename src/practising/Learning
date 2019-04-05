@@ -1,0 +1,79 @@
+#!/usr/bin/env python
+from ActionManager import ActionManager
+
+class Command:
+	def __init__(self, d):
+		self.data = d
+		self.action = ActionManager()
+		
+	def equals(self, o):
+		if self.data == o.data:
+			return True
+		else:
+			return False
+			
+	def doAction(self):
+		self.action.performAction()
+		
+	def updateProbs(self, learnRate):
+		self.action.updateProbs(self.action.last_action,learnRate)
+
+class Robot:
+	
+	def __init__(self):
+		self.emotion = 0
+		self.known_commands = []
+		self.last_command = None
+		
+	def printCommands(self):
+		for c in self.known_commands:
+			print c.data
+		
+	def findCommand(self, com):
+		for c in self.known_commands:
+			if c.equals(com):
+				return c
+		return None
+		
+		
+	def setEmotion(self, e):
+		self.emotion = e
+
+	
+	def detectCommand(self, com):
+		#commandKnown = False 
+		c = self.findCommand(com)
+		if not c == None:
+			self.last_command = c
+		else:
+			self.known_commands.append(com)
+			self.last_command = com
+			
+		self.last_command.doAction()
+		
+	
+if __name__ == "__main__":
+	
+	rob = Robot()
+	answer = ""
+	command_list = [Command("com1"), Command("com2"), Command("com1"), Command("com3")]
+	
+	while True:
+		answer = input("What do you want to do? ")
+		if answer == "e":
+			rob.setEmotion(1-rob.emotion)
+			print "emotion: " + str(rob.emotion)
+		if answer == "c":
+			rob.detectCommand(command_list.pop(0))
+			print "Commands: "
+			print  str(rob.printCommands())
+			print "Last command: " + str(rob.last_command.data)
+		elif answer == "r":
+			rob.last_command.updateProbs(rob.emotion)
+			print "bla"
+		elif answer == "q":
+			break
+
+		
+	
+		
