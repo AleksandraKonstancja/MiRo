@@ -116,6 +116,7 @@ class Robot:
 				com = self.findCommand(com)
 				self.last_command = com
 			elif not self.commandKnown(com) and com.isCommand():
+				com.saveImage()
 				self.known_commands.append(com)
 				self.last_command = com
 			else:

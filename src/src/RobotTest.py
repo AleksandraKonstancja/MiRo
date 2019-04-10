@@ -1,4 +1,4 @@
-#!/usr/bin/python3.6
+#!/usr/bin/env python
 """
 This is a ActionManager class of the MiRo project
 """
@@ -7,6 +7,7 @@ from Robot import Robot
 from Command import Command
 import cv2
 import sys
+import mock
 #sys.modules['rospy'] = mock.Mock()
 		
 class TestClass(unittest.TestCase):
@@ -88,7 +89,7 @@ class TestClass(unittest.TestCase):
 		rob.known_commands = [com]
 		rob.last_command = com
 		
-		#Robot.collectFeedback = Mock(return_value=-1)
+		Robot.collectFeedback = mock.ock(return_value=-1)
 		
 		"""before = rob.known_commands[0].sequence[0].probabilityDict["go"]
 		rob.respondToCommand()
@@ -98,6 +99,7 @@ class TestClass(unittest.TestCase):
 		rob.last_command = com"""
 		rob.emotion = 0
 		#import pdb; pdb.set_trace()
+		#rob.collectFeedback = mock.Mock()
 		rob.respondToCommand()
 		after = rob.known_commands[0].sequence[1].isStopAction
 		self.assertFalse(after)

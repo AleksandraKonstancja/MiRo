@@ -16,6 +16,10 @@ boundaries = {
 
 class Command:
 	
+	def saveImage(self):
+		name = self.camera + self.colour + self.shape + ".jpg"
+		cv2.imwrite(name, self.image)
+	
 		
 	def performAct2(self):
 		self.sequence[self.action_index].performAction()
@@ -68,6 +72,10 @@ class Command:
 		
 		cv2.imshow(self.camera, image)
 		cv2.waitKey(1) & 0xFF
+		
+		text = "cur" + self.camera + ".jpg"
+		cv2.imwrite(text, image)
+		
 		
 		hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 		(h,s,v) = cv2.split(hsv)
@@ -174,6 +182,7 @@ class Command:
 			text = str( self.colour) + " " + str(self.shape) 
 			cv2.putText(image, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)	
 			text2 = str(self.camera) + " shape detected" 
+			self.image = image
 			cv2.imshow(text2, image)
 			cv2.waitKey(1) & 0xFF
 			#cv2.destroyAllWindows()
@@ -205,6 +214,13 @@ class Command:
 			
 	def toPrint(self):
 		return (str(self.camera) + " " + str(self.colour) + " " + str(self.shape))
+		
+	def actionsToPrint(self):
+		text = ""
+		for a in self.sequence:
+			text+= str(a.probabilityDict)
+			text+="\n"
+		return text
 	
 	def __init__(self, camera):
 		
@@ -212,6 +228,7 @@ class Command:
 		self.camera = camera
 		self.shape = ""
 		self.colour = ""
+		self.image = None
 		self.action = ActionManager()
 		self.action_index = 0
 		self.sequence = [ActionManager(),ActionManager(True)]
