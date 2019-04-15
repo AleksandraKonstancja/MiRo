@@ -15,8 +15,8 @@ from gi.repository import Gtk,GObject,Gdk,GLib,GdkPixbuf
 gi.require_version('Gtk', '3.0')
 
 #GObject.threads_init()
-GLib.threads_init()
-Gdk.threads_init()
+#GLib.threads_init()
+#Gdk.threads_init()
 
 class Application:
 	
@@ -56,10 +56,10 @@ if __name__ == "__main__":
 
 	rospy.init_node("miro_ros_client_py", anonymous=True)
 	main = Application()
-	#thread.start_new_thread(Gtk.main())
-	thread.start_new_thread(main.loop())
-	Gtk.main()
-	#main.loop()
+	#thread.start_new_thread(Gtk.main,())
+	#thread.start_new_thread(main.loop, ())
+	#Gtk.main()
+	main.loop()
     
 
 

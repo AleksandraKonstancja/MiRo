@@ -18,6 +18,7 @@ from miro_constants import miro
 from sensor_msgs.msg import Image
 import time
 from os import system, name 
+import thread
 
 """
 Formating function copied from miro_ros_client.py
@@ -110,6 +111,7 @@ class Robot:
 		com.getCommandData(image)
 		
 		if self.last_command == None:
+			self.state = "Looking for commands"
 			self.responded = False
 		
 			if self.commandKnown(com):
@@ -122,7 +124,7 @@ class Robot:
 			else:
 				self.q = platform_control()
 		elif not self.responded:
-			self.respondToCommand()
+			thread.start_new_thread(self.respondToCommand, ())
 			self.responded = True
 				
 	"""
@@ -138,6 +140,7 @@ class Robot:
 		
 		for i in range(len(self.last_command.sequence)):
 			self.q = self.last_command.sequence[i].performAction()
+			self.state = "Responding to " + self.last_command.toPrint() + " with " + self.last_command.sequence[i].choice
 			#if (not a.isFullyLearned()):
 			feedback = self.collectFeedback()
 			if self.last_command.sequence[i].isStopAction:
@@ -158,6 +161,7 @@ class Robot:
 		
 	def collectFeedback(self):
 		
+		self.state = "action finished, waiting for feedback"
 		print ("action finished, waiting for feedback")
 		#self.waitingForFeedback = True
 		feedback = -1
@@ -177,6 +181,7 @@ class Robot:
 	def detectLeft( self, object):
 		bridge = CvBridge()
 		image = bridge.imgmsg_to_cv2(object, "bgr8")
+		#thread.start_new_thread( self.detectCommand, ( image, "left"))
 		self.detectCommand(image, "left")
 		
 	"""
@@ -185,6 +190,7 @@ class Robot:
 	def detectRight( self, object):
 		bridge = CvBridge()
 		image = bridge.imgmsg_to_cv2(object, "bgr8")
+		#thread.start_new_thread( self.detectCommand, ( image, "right"))
 		self.detectCommand(image, "right")
 		
 	"""
@@ -267,6 +273,7 @@ class Robot:
 		self.emotions = []
 		self.actionFinished = True
 		self.responded = False
+		self.state = ""
 		
 		self.eyelid_closure = 0
 		self.q = platform_control()

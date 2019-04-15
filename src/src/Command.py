@@ -18,7 +18,8 @@ class Command:
 	
 	def saveImage(self):
 		name = self.camera + self.colour + self.shape + ".jpg"
-		cv2.imwrite(name, self.image)
+		toSave = cv2.resize(self.image, None, fx= 0.5, fy=0.5)
+		cv2.imwrite(name, toSave)
 	
 		
 	def performAct2(self):
