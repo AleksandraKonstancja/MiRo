@@ -161,7 +161,7 @@ class Robot:
 		
 	def collectFeedback(self):
 		
-		self.state = "action finished, waiting for feedback"
+		#self.state = "action finished, waiting for feedback"
 		print ("action finished, waiting for feedback")
 		#self.waitingForFeedback = True
 		feedback = -1
@@ -181,8 +181,10 @@ class Robot:
 	def detectLeft( self, object):
 		bridge = CvBridge()
 		image = bridge.imgmsg_to_cv2(object, "bgr8")
+		self.leftCam = image
 		#thread.start_new_thread( self.detectCommand, ( image, "left"))
 		self.detectCommand(image, "left")
+		
 		
 	"""
 	Prepares image from right camera for detection and detects command.
@@ -190,6 +192,7 @@ class Robot:
 	def detectRight( self, object):
 		bridge = CvBridge()
 		image = bridge.imgmsg_to_cv2(object, "bgr8")
+		self.rightCam = image
 		#thread.start_new_thread( self.detectCommand, ( image, "right"))
 		self.detectCommand(image, "right")
 		
@@ -274,6 +277,8 @@ class Robot:
 		self.actionFinished = True
 		self.responded = False
 		self.state = ""
+		self.leftCam = None
+		self.rightCam = None
 		
 		self.eyelid_closure = 0
 		self.q = platform_control()

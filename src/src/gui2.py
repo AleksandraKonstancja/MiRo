@@ -1,16 +1,29 @@
 #!/usr/bin/env python
 import rospy
+import numpy
 import gi
 import thread
 import threading
+from miro_msgs.msg import platform_mics, core_control, platform_sensors, core_state, core_config, platform_control
 from Robot import Robot
 from Command import Command
+from cv_bridge import CvBridge, CvBridgeError
+from sensor_msgs.msg import Image
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk,GObject,Gdk,GLib,GdkPixbuf
 
+import cv2
+
 GLib.threads_init()
 Gdk.threads_init()
-
+def fmt(x, f):
+    s = ""
+    x = bytearray(x)
+    for i in range(0, len(x)):
+        if not i == 0:
+            s = s + ", "
+        s = s + f.format(x[i])
+    return s
 
 
 
@@ -25,11 +38,11 @@ class MyWindow:
 		self.win.show_all()
 		
 		self.rob = Robot()
-		self.rob.last_command=Command("right")
+		"""self.rob.last_command=Command("right")
 		self.rob.last_command.shape = "circle"
 		self.rob.last_command.colour = "red"
 		self.rob.known_commands = [Command("left"),Command("left"),self.rob.last_command]
-		self.rob.state = "Waiting for command"
+		self.rob.state = "Waiting for command" """
 		
 		self.emotionLab = self.builder.get_object("label1")
 		self.moodLab = self.builder.get_object("label2")
@@ -42,6 +55,8 @@ class MyWindow:
 		self.cameraL = self.builder.get_object("cameraL")
 		#self.cameraL.set_from_file("triangle.png")
 		self.cameraR = self.builder.get_object("cameraR")
+		topic_root = "/miro/rob01" #+ self.opt.robot_name
+		#self.sub_sensors = rospy.Subscriber(topic_root + "/platform/sensors",platform_sensors, self.callback_platform_sensors)
 		
 		
 		self.commandList = []
@@ -66,6 +81,11 @@ class MyWindow:
     	while True:
     		self.rob.emotion+=1
     		print (self.rob.emotion)
+    		
+    def cvToPixbuf(self, img):
+    	h, w, d = img.shape
+    	pb = GdkPixbuf.Pixbuf.new_from_data(img.tostring(), GdkPixbuf.Colorspace.RGB,  False, 8, w, h, w*3)
+    	return pb
         
     def update(self):
 
@@ -96,15 +116,12 @@ class MyWindow:
     	#self.curCommandActions.set_text(text)
     	text = "State: " + str(self.rob.state)
     	self.stateLab.set_text(text)
-					
-    	"""img.set_from_file("triangle.png")
-    	self.leftCommandBox.pack_end(img, True, True, 10)
-    	img = Gtk.Image() 
-    	img.set_from_file("nothing.png")
-    	self.rightCommandBox.pack_end(img, True, True, 10 )"""
     	
     	self.cameraL.set_from_file("curleft.jpg")
     	self.cameraR.set_from_file("curright.jpg")
+    	#imgg = cv2.imread("triangle.png")
+    	#self.cameraL.set_from_pixbuf(self.cvToPixbuf(imgg))
+    	
     	
     	self.win.show_all()
     	return True # IMPORTANT
@@ -113,9 +130,7 @@ class MyWindow:
         
 
 if __name__ == "__main__":
-	"""win = MyWindow()
-	win.connect("destroy", Gtk.main_quit)
-	win.show_all()"""
+
 	rospy.init_node("miro_ros_client_py", anonymous=True)
 	main = MyWindow()
 	#thread.start_new_thread(main.loop, ())

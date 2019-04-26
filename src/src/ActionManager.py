@@ -98,7 +98,8 @@ class ActionManager:
 		self.choice = "eyes"
 		print "eyes"
 	def headDown(self):
-		self.q.body_config[1] = 1- miro.MIRO_LIFT_MAX_RAD
+		self.q.body_config[1] =  miro.MIRO_LIFT_MAX_RAD - self.q.body_config[1]
+		self.q.body_config_speed[1] = miro.MIRO_P2U_W_LEAN_SPEED_INF
 		self.choice = "headDown"
 		print "hDown"
 	def ears(self):
@@ -108,6 +109,8 @@ class ActionManager:
 		print "ears"
 	def stop(self):
 		self.q = platform_control()
+		self.q.body_config[1] =  miro.MIRO_LIFT_MIN_RAD - self.q.body_config[1]
+		self.q.body_config_speed[1] = miro.MIRO_P2U_W_LEAN_SPEED_INF
 		self.choice = "stop"
 		print "stop"
 			
@@ -136,6 +139,7 @@ class ActionManager:
 			
 		for key in self.actionDict.keys():
 			self.probabilityDict[key] = initial_prob
+			
 			
 			
 		

@@ -62,7 +62,7 @@ class Command:
 			#print self.shape
 			self.detectColour(img, cnts)
 		#else:
-			#print " no shape detected"
+			#print " no shape detected" 
 	
 	
 	"""
@@ -71,8 +71,8 @@ class Command:
 	"""
 	def prepareImage(self, image):
 		
-		cv2.imshow(self.camera, image)
-		cv2.waitKey(1) & 0xFF
+		#cv2.imshow(self.camera, image)
+		#cv2.waitKey(1) & 0xFF
 		
 		text = "cur" + self.camera + ".jpg"
 		cv2.imwrite(text, image)
@@ -184,8 +184,8 @@ class Command:
 			cv2.putText(image, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)	
 			text2 = str(self.camera) + " shape detected" 
 			self.image = image
-			cv2.imshow(text2, image)
-			cv2.waitKey(1) & 0xFF
+			#cv2.imshow(text2, image)
+			#cv2.waitKey(1) & 0xFF
 			#cv2.destroyAllWindows()
 			
 	
