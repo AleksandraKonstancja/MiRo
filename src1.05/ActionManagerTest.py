@@ -1,0 +1,101 @@
+#!/usr/bin/env python
+
+"""
+This is a ActionManager class of the MiRo project
+"""
+import unittest
+import random
+from time import time
+from miro_msgs.msg import platform_control
+from miro_constants import miro
+from ActionManager import ActionManager
+	
+			
+		
+class TestClass(unittest.TestCase):
+	
+	def test_init(self):
+		am = ActionManager()
+		for key in am.probabilityDict.keys():
+			self.assertTrue(am.probabilityDict[key] == 100.0/6)
+			
+	def test_highestProb(self):
+		am = ActionManager()
+		am.probabilityDict["go"] = 50
+		self.assertTrue(am.findHighestProb() == "go")
+		
+	def test_updateProbs(self):
+		
+		am = ActionManager()
+		
+		# test that sum of all probabilities is still 100 after update
+		am.choice = "go"
+		am.updateProbs( 10)
+		prob_sum = 0
+		for key in am.probabilityDict.keys():
+			prob_sum += am.probabilityDict[key]
+		
+		self.assertEqual(round(prob_sum,2), 100.0)
+		
+		# test that update works correctly even if sum of learning rate and
+		# action probability is larger than 100
+		prob_sum=0
+		am.choice = "turnL"
+		am.updateProbs( 90)
+		for key in am.probabilityDict.keys():
+			prob_sum += am.probabilityDict[key]
+		
+		self.assertEqual(round(prob_sum,2), 100.0)
+		self.assertEqual(round(am.probabilityDict["turnL"],2), 100.0)
+		
+		# test that both specified action and remaining actions are updated
+		# to correct values
+		am = ActionManager()
+		am.choice = "go"
+		am.updateProbs(40)
+		self.assertEqual(round(am.probabilityDict["go"],1), 56.7)
+		self.assertEqual(round(am.probabilityDict["turnL"],1), 8.7)
+		
+		# test that actions are updated correctly with a negative learning rate
+		am = ActionManager()
+		am.choice = "go"
+		am.updateProbs(-16)
+		self.assertEqual(round(am.probabilityDict["go"],1), 0.7)
+		self.assertEqual(round(am.probabilityDict["turnL"],1), 19.9)
+		
+		# test that update works correctly if the updated probability is 100
+		am.updateProbs(100)
+		self.assertEqual(round(am.probabilityDict["go"],2), 100.0)
+		am.updateProbs(20)
+		self.assertEqual(round(am.probabilityDict["go"],2), 100.0)
+		
+		
+		
+		
+	def test_performAction(self):
+		
+		# test that appropriate answer is generated when choosing action based
+		# on its probability. Due to random nature it is only possible to test
+		# it for probability 100
+		am = ActionManager()
+		for key in am.probabilityDict:
+			am.probabilityDict[key] = 0
+		am.probabilityDict["go"] = 100
+		am.performAction()
+		self.assertEqual("go", am.choice)
+		
+	def testToPrint(self):
+		am = ActionManager()
+		am.choice = "go"
+		am.updateProbs( 20)
+		print am.toPrint()
+		
+			
+if __name__ == '__main__':
+	#unittest.main()
+	import rostest
+	rostest.rosrun('test_roslaunch', 'action_manager_test', TestClass)
+
+
+
+
